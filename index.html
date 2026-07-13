@@ -1,49 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Atlas | MoreTeekay</title>
+  <title>Atlas | MoreTeekay</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
 
-<style>
-html,body{
-    margin:0;
-    height:100%;
-    font-family:Arial,sans-serif;
-}
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+  >
 
-#map{
-    width:100%;
-    height:100vh;
-}
-</style>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+  >
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .place-popup {
+      width: 220px;
+    }
+
+    .place-popup img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .place-popup h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .place-popup p {
+      margin: 0 0 10px;
+      line-height: 1.4;
+    }
+
+    .place-popup a {
+      display: inline-block;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
+  <div id="map"></div>
 
-<div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-<script>
+  <script>
+    const map = L.map("map", {
+      minZoom: 2,
+      worldCopyJump: true
+    }).setView([20, 0], 2);
 
-const map = L.map("map").setView([20,0],2);
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        attribution: "© OpenStreetMap contributors"
+      }
+    ).addTo(map);
 
-L.tileLayer(
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    {
-        attribution:"© OpenStreetMap contributors"
-    }
-).addTo(map);
+    const places = [
+      {
+        name: "Paris",
+        country: "France",
+        latitude: 48.8566,
+        longitude: 2.3522,
+        description: "A first test marker for the Atlas.",
+        image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80",
+        link: "https://moreteekay.com/"
+      },
+      {
+        name: "Bordeaux",
+        country: "France",
+        latitude: 44.8378,
+        longitude: -0.5792,
+        description: "A city that became an important part of my life.",
+        image: "https://images.unsplash.com/photo-1591797762236-77dd9c5c29cc?auto=format&fit=crop&w=800&q=80",
+        link: "https://moreteekay.com/"
+      },
+      {
+        name: "Kuala Lumpur",
+        country: "Malaysia",
+        latitude: 3.139,
+        longitude: 101.6869,
+        description: "My current base in Malaysia.",
+        image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80",
+        link: "https://moreteekay.com/"
+      }
+    ];
 
-L.marker([48.8566,2.3522])
-.addTo(map)
-.bindPopup("<b>Paris</b><br>First test marker.");
+    const markers = L.markerClusterGroup();
 
-</script>
+    places.forEach(function(place) {
+      const popup = `
+        <div class="place-popup">
+          <img src="${place.image}" alt="${place.name}">
+          <h3>${place.name}</h3>
+          <p>${place.country}</p>
+          <p>${place.description}</p>
+          <a href="${place.link}" target="_blank" rel="noopener">
+            View more
+          </a>
+        </div>
+      `;
 
+      const marker = L.marker([
+        place.latitude,
+        place.longitude
+      ]).bindPopup(popup);
+
+      markers.addLayer(marker);
+    });
+
+    map.addLayer(markers);
+  </script>
 </body>
 </html>
