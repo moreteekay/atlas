@@ -1,5 +1,70 @@
-html,body,#map{height:100%;margin:0}
-.popup img{width:100%;border-radius:8px;margin:.5rem 0}
-.popup h3{margin:.2rem 0}
-.popup h4{margin:.7rem 0 .2rem}
-.popup ul{padding-left:18px;margin:.2rem 0}
+html,
+body,
+#map {
+  height: 100%;
+  margin: 0;
+}
+
+.popup {
+  font-family: Arial, sans-serif;
+  line-height: 1.45;
+}
+
+.popup h3 {
+  margin: 0 0 2px;
+  font-size: 20px;
+}
+
+.popup .location {
+  margin: 0 0 10px;
+  color: #666;
+  font-size: 13px;
+}
+
+.popup h4 {
+  margin: 14px 0 5px;
+  font-size: 14px;
+}
+
+.popup p {
+  margin: 8px 0;
+}
+
+.popup ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.popup a {
+  color: inherit;
+}
+
+.hero-photo,
+.photo-grid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 7px;
+}
+
+.hero-photo {
+  margin: 10px 0;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.photo-grid figure {
+  margin: 0;
+}
+
+.photo-grid figcaption {
+  margin-top: 3px;
+  color: #666;
+  font-size: 11px;
+}

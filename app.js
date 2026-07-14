@@ -1,61 +1,184 @@
-const map=L.map('map').setView([20,0],2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
- attribution:'© OpenStreetMap contributors'
+const map = L.map("map", {
+  worldCopyJump: true,
+  minZoom: 2
+}).setView([20, 0], 2);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap contributors",
+  maxZoom: 19
 }).addTo(map);
 
-const load=f=>new Promise(r=>Papa.parse(`data/${f}`,{download:true,header:true,complete:x=>r(x.data)}));
+function loadCsv(filename) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(`data/${filename}`, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: result => resolve(result.data),
+      error: error => reject(error)
+    });
+  });
+}
+
+function text(value) {
+  return String(value || "").trim();
+}
+
+function escapeHtml(value) {
+  return text(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function splitIds(value) {
+  return text(value)
+    .split(/[,;\n]+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function section(title, body) {
+  return body ? `<section><h4>${title}</h4>${body}</section>` : "";
+}
+
+function buildContentList(items) {
+  if (!items.length) return "";
+
+  return `<ul>${items.map(item => {
+    const title = escapeHtml(item.Title || "Untitled");
+    const url = text(item.URL);
+    return `<li>${url
+      ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${title}</a>`
+      : title}</li>`;
+  }).join("")}</ul>`;
+}
 
 Promise.all([
- load('places.csv'),
- load('content.csv'),
- load('photos.csv')
-]).then(([places,content,photos])=>{
- places.filter(p=>p["Map Enabled?"]==="Yes").forEach(place=>{
-   if(!place.Latitude||!place.Longitude) return;
+  loadCsv("places.csv"),
+  loadCsv("content.csv"),
+  loadCsv("photos.csv")
+]).then(([places, content, photos]) => {
+  const contentById = new Map(
+    content
+      .filter(item => text(item["Content ID"]))
+      .map(item => [text(item["Content ID"]), item])
+  );
 
-   const id=place["Atlas ID"];
-   const c=content.filter(x=>x["Atlas ID"]===id && x["Publishing Status"]==="Published");
-   const p=photos.filter(x=>x["Atlas ID"]===id && x["Published?"]==="Yes");
+  const photosByPlace = new Map();
+  photos.forEach(photo => {
+    const atlasId = text(photo["Atlas ID"]);
+    if (!atlasId || !text(photo["Photo URL"])) return;
+    if (!photosByPlace.has(atlasId)) photosByPlace.set(atlasId, []);
+    photosByPlace.get(atlasId).push(photo);
+  });
 
-   let html=`<div class="popup">
-   <h3>${place["City / Place"]}</h3>
-   <p>${place["Short Description"]||""}</p>`;
+  const bounds = [];
 
-   if(place["Hero Photo URL"])
-      html+=`<img src="${place["Hero Photo URL"]}" alt="">`;
+  places.forEach(place => {
+    if (text(place["Map Enabled"]).toLowerCase() !== "yes") return;
 
-   if(place["Personal Memory"])
-      html+=`<p>${place["Personal Memory"]}</p>`;
+    const latitude = Number.parseFloat(place.Latitude);
+    const longitude = Number.parseFloat(place.Longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
 
-   const add=(title,type)=>{
-      const items=c.filter(x=>x.Type===type);
-      if(!items.length) return;
-      html+=`<h4>${title}</h4><ul>`;
-      items.forEach(i=>{
-         html+= i.URL
-           ? `<li><a href="${i.URL}" target="_blank">${i.Title}</a></li>`
-           : `<li>${i.Title}</li>`;
+    const atlasId = text(place["Atlas ID"]);
+    const placePhotos = photosByPlace.get(atlasId) || [];
+
+    const relatedContent = splitIds(place["Related Content IDs"])
+      .map(id => contentById.get(id))
+      .filter(Boolean)
+      .filter(item => text(item.Status).toLowerCase() === "published");
+
+    const grouped = {
+      Essay: [],
+      Journal: [],
+      Podcast: [],
+      Gallery: [],
+      Video: [],
+      External: []
+    };
+
+    relatedContent.forEach(item => {
+      const type = text(item.Type);
+      if (grouped[type]) grouped[type].push(item);
+    });
+
+    const heroPhoto =
+      text(place["Hero Photo"]) ||
+      text((placePhotos.find(photo => text(photo["Hero?"]).toLowerCase() === "yes") || {})["Photo URL"]);
+
+    const galleryPhotos = placePhotos
+      .filter(photo => text(photo["Photo URL"]) !== heroPhoto);
+
+    let popup = `<article class="popup">`;
+    popup += `<h3>${escapeHtml(place.Place)}</h3>`;
+
+    const locationLine = [place.Region, place.Destination || place.Country]
+      .map(text)
+      .filter(Boolean)
+      .join(", ");
+
+    if (locationLine) {
+      popup += `<p class="location">${escapeHtml(locationLine)}</p>`;
+    }
+
+    if (heroPhoto) {
+      popup += `<img class="hero-photo" src="${escapeHtml(heroPhoto)}" alt="${escapeHtml(place.Place)}">`;
+    }
+
+    if (text(place["Short Description"])) {
+      popup += `<p>${escapeHtml(place["Short Description"])}</p>`;
+    }
+
+    if (text(place["Personal Memory"])) {
+      popup += section("Memory", `<p>${escapeHtml(place["Personal Memory"])}</p>`);
+    }
+
+    popup += section("Essays", buildContentList(grouped.Essay));
+    popup += section("Journal", buildContentList(grouped.Journal));
+    popup += section("Podcast", buildContentList(grouped.Podcast));
+    popup += section("Videos", buildContentList(grouped.Video));
+    popup += section("Related content", buildContentList(grouped.External));
+    popup += section("Galleries", buildContentList(grouped.Gallery));
+
+    if (galleryPhotos.length) {
+      popup += `<section><h4>Photos</h4><div class="photo-grid">`;
+      popup += galleryPhotos.map(photo => `
+        <figure>
+          <img src="${escapeHtml(photo["Photo URL"])}" alt="${escapeHtml(photo.Caption || place.Place)}">
+          ${text(photo.Caption) ? `<figcaption>${escapeHtml(photo.Caption)}</figcaption>` : ""}
+        </figure>
+      `).join("");
+      popup += `</div></section>`;
+    }
+
+    popup += `</article>`;
+
+    const marker = L.circleMarker([latitude, longitude], {
+      radius: text(place.Favorite).toLowerCase() === "yes" ? 7 : 5,
+      weight: 1.5,
+      fillOpacity: 0.85
+    })
+      .addTo(map)
+      .bindPopup(popup, {
+        maxWidth: 480,
+        maxHeight: 560
       });
-      html+='</ul>';
-   };
 
-   add("Essays","Essay");
-   add("Journal","Journal");
-   add("Podcast","Podcast");
-   add("Videos","Video");
-   add("Gallery","Gallery");
+    bounds.push([latitude, longitude]);
+  });
 
-   if(p.length){
-      html+="<h4>Photos</h4>";
-      p.forEach(ph=>{
-         html+=`<img src="${ph["Photo URL"]}" alt="${ph.Caption||""}">`;
-      });
-   }
-
-   html+="</div>";
-
-   L.marker([parseFloat(place.Latitude),parseFloat(place.Longitude)])
-    .addTo(map)
-    .bindPopup(html,{maxWidth:450});
- });
+  if (bounds.length) {
+    map.fitBounds(bounds, {
+      padding: [25, 25],
+      maxZoom: 4
+    });
+  } else {
+    console.error("No valid places were found in places.csv.");
+  }
+}).catch(error => {
+  console.error("Atlas data could not be loaded:", error);
 });
