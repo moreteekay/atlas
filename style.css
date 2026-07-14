@@ -1,0 +1,5 @@
+html,body,#map{height:100%;margin:0}
+.popup img{width:100%;border-radius:8px;margin:.5rem 0}
+.popup h3{margin:.2rem 0}
+.popup h4{margin:.7rem 0 .2rem}
+.popup ul{padding-left:18px;margin:.2rem 0}
