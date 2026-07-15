@@ -1,1 +1,0 @@
-Upload app.js, style.css, and the data folder to the root of the GitHub atlas repository. Replace existing files when asked.
