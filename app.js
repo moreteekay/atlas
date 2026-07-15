@@ -1,7 +1,75 @@
 const CONFIG=window.ATLAS_CONFIG||{};
-const map=L.map("map",{worldCopyJump:true,minZoom:2,zoomControl:false}).setView([22,3],2);
+const map=L.map("map",{
+  worldCopyJump:true,
+  minZoom:2,
+  maxZoom:18,
+  zoomControl:false,
+  preferCanvas:true
+}).setView([22,3],2);
+
 L.control.zoom({position:"bottomright"}).addTo(map);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:19}).addTo(map);
+
+// Dark Matter supplies the fine black cartographic base and labels.
+L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
+  {
+    attribution:"© OpenStreetMap contributors © CARTO",
+    subdomains:"abcd",
+    maxZoom:20
+  }
+).addTo(map);
+
+// White relief is blended over the dark map to make mountains and terrain visible.
+map.createPane("hillshade");
+map.getPane("hillshade").classList.add("hillshade-pane");
+map.getPane("hillshade").style.zIndex=240;
+
+L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
+  {
+    pane:"hillshade",
+    attribution:"Hillshade © Esri",
+    maxZoom:13
+  }
+).addTo(map);
+
+// A separate label layer keeps names fine, pale and readable.
+map.createPane("labels");
+map.getPane("labels").classList.add("labels-pane");
+map.getPane("labels").style.zIndex=430;
+
+L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png",
+  {
+    pane:"labels",
+    subdomains:"abcd",
+    maxZoom:20
+  }
+).addTo(map);
+
+function addGraticule(){
+  const group=L.layerGroup();
+  for(let lat=-80;lat<=80;lat+=10){
+    const points=[];
+    for(let lon=-180;lon<=180;lon+=2)points.push([lat,lon]);
+    group.addLayer(L.polyline(points,{
+      className:`graticule-line${lat%30===0?" graticule-major":""}`,
+      interactive:false,
+      pane:"overlayPane"
+    }));
+  }
+  for(let lon=-180;lon<180;lon+=10){
+    const points=[];
+    for(let lat=-85;lat<=85;lat+=2)points.push([lat,lon]);
+    group.addLayer(L.polyline(points,{
+      className:`graticule-line${lon%30===0?" graticule-major":""}`,
+      interactive:false,
+      pane:"overlayPane"
+    }));
+  }
+  group.addTo(map);
+}
+addGraticule();
 
 const clusters=L.markerClusterGroup({showCoverageOnHover:false,spiderfyOnMaxZoom:true,maxClusterRadius:45,disableClusteringAtZoom:12});
 map.addLayer(clusters);
