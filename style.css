@@ -15,50 +15,29 @@ button,input{font:inherit}
 #map{
   z-index:1;
   background:
-    radial-gradient(circle at 50% 42%,rgba(255,255,255,.035),transparent 43%),
-    linear-gradient(#090a0a,#0d0e0e);
+    radial-gradient(circle at 50% 45%,rgba(255,255,255,.025),transparent 48%),
+    #0a0b0b;
 }
 .leaflet-tile-pane{
-  filter:grayscale(1) contrast(1.38) brightness(.63);
+  filter:grayscale(1) contrast(1.18) brightness(.78);
 }
-.hillshade-pane{
+.relief-pane{
   mix-blend-mode:screen;
-  opacity:.48;
-  filter:grayscale(1) invert(1) contrast(1.8) brightness(.58);
+  opacity:.16;
+  filter:grayscale(1) invert(1) contrast(1.25) brightness(.42);
 }
 .labels-pane{
   mix-blend-mode:screen;
-  opacity:.72;
-  filter:grayscale(1) contrast(1.55) brightness(1.18);
+  opacity:.82;
+  filter:grayscale(1) contrast(1.25) brightness(1.02);
 }
-.graticule-line{
-  stroke:#d9d9d9;
-  stroke-opacity:.12;
-  stroke-width:.65;
-  stroke-dasharray:1 5;
-}
-.graticule-major{
-  stroke-opacity:.22;
-  stroke-width:.85;
-}
-#map::before{
+#map::after{
   content:"";
   position:absolute;
   z-index:490;
   inset:0;
   pointer-events:none;
-  background:
-    repeating-linear-gradient(0deg,transparent 0,transparent 39px,rgba(255,255,255,.016) 40px),
-    repeating-linear-gradient(90deg,transparent 0,transparent 39px,rgba(255,255,255,.016) 40px);
-  mix-blend-mode:screen;
-}
-#map::after{
-  content:"";
-  position:absolute;
-  z-index:491;
-  inset:0;
-  pointer-events:none;
-  box-shadow:inset 0 0 150px rgba(0,0,0,.83);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.58);
 }
 #loading-screen{position:fixed;z-index:5000;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f1010;transition:opacity .55s ease,visibility .55s}
 #loading-screen.hidden{opacity:0;visibility:hidden}
@@ -121,27 +100,37 @@ button,input{font:inherit}
 .gallery-track figcaption{margin-top:5px;color:var(--muted);font-size:11px}
 @media(max-width:650px){.brand-subtitle{display:none}#story-panel{right:8px;bottom:8px;width:calc(100vw - 16px);max-height:70vh}#stats-grid{grid-template-columns:1fr 1fr}}
 
-/* Engraved cartography details */
-.leaflet-control-zoom a,
-.leaflet-control-attribution {
-  background: rgba(12,13,13,.88) !important;
-  color: #c9c5bd !important;
-  border-color: rgba(255,255,255,.15) !important;
+.brand-title{
+  font-size:22px;
 }
-.leaflet-control-attribution a {
-  color: #ded9d0 !important;
-}
-.leaflet-control-zoom a:hover {
-  background: rgba(38,39,39,.95) !important;
-}
-.leaflet-container {
-  font-family: Arial, Helvetica, sans-serif;
-}
-.brand-title {
-  font-size: 22px;
-}
-.feather-marker svg {
+
+.feather-marker svg{
   filter:
-    drop-shadow(0 0 1px rgba(255,255,255,.42))
-    drop-shadow(0 3px 3px rgba(0,0,0,.95));
+    drop-shadow(0 0 1px rgba(240,236,228,.78))
+    drop-shadow(0 2px 3px rgba(0,0,0,.95));
+}
+
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large{
+  background:rgba(230,225,216,.13);
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div{
+  color:#111;
+  background:rgba(230,225,216,.94);
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.leaflet-control-zoom a,
+.leaflet-control-attribution{
+  background:rgba(14,15,15,.9)!important;
+  color:#cfc9bf!important;
+  border-color:rgba(255,255,255,.15)!important;
+}
+
+.leaflet-control-attribution a{
+  color:#eee7db!important;
 }

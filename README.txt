@@ -7,8 +7,6 @@ Upload these files to the root of the GitHub atlas repository:
 - config.js
 - the complete data folder
 
-Visual direction: black engraved world atlas with pale relief, fine labels and geographic grid.
-
 Features:
 - thin black raven-feather markers
 - subtle dark map
@@ -25,3 +23,6 @@ Features:
 Google Sheets:
 Paste the published CSV URLs for Places, Content Library and Photos into config.js.
 After that, edit the sheet and refresh the map. No code replacement is required.
+
+
+FIXED VERSION: no geographic grid. Restrained charcoal relief map with pale labels.
