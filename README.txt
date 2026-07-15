@@ -1,30 +1,34 @@
-MORETEEKAY ATLAS — INTERACTIVE AUTOBIOGRAPHY ENGINE
+MORETEEKAY ATLAS — FINAL CLEAN ENGINE
 
 Upload these files to the root of the GitHub atlas repository:
 - index.html
-- style.css
 - app.js
+- style.css
 - config.js
-- the complete data folder
 
-Features:
-- thin black raven-feather markers
-- subtle dark map
-- smooth navigation and story-panel animations
-- photo-first story cards
-- horizontal swipe galleries
-- type filters
-- favorites
-- optional timeline
-- live travel statistics
-- no empty content sections
-- fully data-driven: adding spreadsheet rows does not require new code
+Keep the existing data folder.
 
-Google Sheets:
-Paste the published CSV URLs for Places, Content Library and Photos into config.js.
-After that, edit the sheet and refresh the map. No code replacement is required.
+CONTENT LIBRARY — EXACT COLUMNS
+Content ID | Type | Title | Status | URL | Atlas ID
 
-BRIGHT MAP VERSION
+Example:
+ART001 | Essay | Neighbor: ... | Published | https://... | ATL-0195
 
-The map now uses one warm light cartographic basemap at every zoom level.
-There is no dark opening state and no visual transition between basemaps.
+The Atlas ID must exactly match the place's Atlas ID in Places.
+One article may be linked to several places by separating Atlas IDs with commas.
+
+PHOTOS — REQUIRED COLUMNS
+Photo ID | Atlas ID | Photo URL | Caption | Hero?
+
+Optional columns such as Display Order, Alt Text, Credit, Status and Private Notes
+are supported and ignored when not needed.
+
+PLACES
+The engine continues to read the current Places sheet structure.
+
+The code supports both:
+1. Direct content linking through Content Library > Atlas ID, which is the preferred method.
+2. The older Places > Related Content IDs field, as a compatibility fallback.
+
+Only content with Status = Published appears publicly.
+Empty article, podcast and photo sections remain hidden.

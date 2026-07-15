@@ -153,15 +153,80 @@ function renderStats(){
 }
 
 Promise.all([loadCsv("places"),loadCsv("content"),loadCsv("photos")]).then(([places,content,photos])=>{
-  const contentById=new Map(content.filter(i=>text(i["Content ID"])).map(i=>[text(i["Content ID"]),i]));
+  /*
+    The real Content Library structure is:
+    Content ID | Type | Title | Status | URL | Atlas ID
+
+    Content is linked directly to a place through Atlas ID.
+    The older Related Content IDs field remains supported as a fallback.
+  */
+  const publishedContent=content.filter(item=>
+    text(item.Status).toLowerCase()==="published"
+  );
+
+  const contentByAtlasId=new Map();
+  publishedContent.forEach(item=>{
+    const atlasIds=splitIds(item["Atlas ID"]);
+    atlasIds.forEach(atlasId=>{
+      if(!contentByAtlasId.has(atlasId)){
+        contentByAtlasId.set(atlasId,[]);
+      }
+      contentByAtlasId.get(atlasId).push(item);
+    });
+  });
+
+  const contentByContentId=new Map(
+    publishedContent
+      .filter(item=>text(item["Content ID"]))
+      .map(item=>[text(item["Content ID"]),item])
+  );
+
   const photosByPlace=new Map();
-  photos.forEach(p=>{const id=text(p["Atlas ID"]);if(!id||!text(p["Photo URL"]))return;if(!photosByPlace.has(id))photosByPlace.set(id,[]);photosByPlace.get(id).push(p)});
+  photos.forEach(photo=>{
+    const atlasId=text(photo["Atlas ID"]);
+    const photoUrl=text(photo["Photo URL"]);
+    if(!atlasId||!photoUrl)return;
+
+    if(!photosByPlace.has(atlasId)){
+      photosByPlace.set(atlasId,[]);
+    }
+    photosByPlace.get(atlasId).push(photo);
+  });
+
+  // Respect the optional Display Order column when it exists.
+  photosByPlace.forEach(placePhotos=>{
+    placePhotos.sort((a,b)=>{
+      const aOrder=Number.parseFloat(a["Display Order"]);
+      const bOrder=Number.parseFloat(b["Display Order"]);
+      const safeA=Number.isFinite(aOrder)?aOrder:Number.MAX_SAFE_INTEGER;
+      const safeB=Number.isFinite(bOrder)?bOrder:Number.MAX_SAFE_INTEGER;
+      return safeA-safeB;
+    });
+  });
 
   places.forEach(place=>{
     if(text(place["Map Enabled"]).toLowerCase()!=="yes")return;
-    const lat=parseFloat(place.Latitude),lon=parseFloat(place.Longitude);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+
+    const lat=parseFloat(place.Latitude);
+    const lon=parseFloat(place.Longitude);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+
     const id=text(place["Atlas ID"]);
-    const related=splitIds(place["Related Content IDs"]).map(x=>contentById.get(x)).filter(Boolean).filter(x=>text(x.Status).toLowerCase()==="published");
+
+    const directContent=contentByAtlasId.get(id)||[];
+    const legacyContent=splitIds(place["Related Content IDs"])
+      .map(contentId=>contentByContentId.get(contentId))
+      .filter(Boolean);
+
+    // Merge both linking systems without displaying the same item twice.
+    const seenContentIds=new Set();
+    const related=[...directContent,...legacyContent].filter(item=>{
+      const uniqueKey=text(item["Content ID"])||`${text(item.Type)}|${text(item.Title)}|${text(item.URL)}`;
+      if(seenContentIds.has(uniqueKey))return false;
+      seenContentIds.add(uniqueKey);
+      return true;
+    });
+
     const placePhotos=photosByPlace.get(id)||[];
     const favorite=text(place.Favorite).toLowerCase()==="yes";
     const marker=L.marker([lat,lon],{icon:featherIcon(favorite),title:text(place.Place)});
