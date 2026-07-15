@@ -24,8 +24,7 @@ Google Sheets:
 Paste the published CSV URLs for Places, Content Library and Photos into config.js.
 After that, edit the sheet and refresh the map. No code replacement is required.
 
-WORLD MAP VERSION
+BRIGHT MAP VERSION
 
-At global zoom, Atlas uses world-atlas.jpg as an illustrated wall map.
-When visitors zoom in, it gradually transitions to an interactive detailed map.
-Keep world-atlas.jpg in the repository root beside index.html.
+The map now uses one warm light cartographic basemap at every zoom level.
+There is no dark opening state and no visual transition between basemaps.
