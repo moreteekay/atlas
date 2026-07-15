@@ -1,173 +1,168 @@
 const CONFIG=window.ATLAS_CONFIG||{};
-const map=L.map("map",{worldCopyJump:true,minZoom:2}).setView([22,3],2);
+const map=L.map("map",{worldCopyJump:true,minZoom:2,zoomControl:false}).setView([22,3],2);
+L.control.zoom({position:"bottomright"}).addTo(map);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:19}).addTo(map);
 
-const clusters=L.markerClusterGroup({showCoverageOnHover:false,spiderfyOnMaxZoom:true,maxClusterRadius:46,disableClusteringAtZoom:12});
+const clusters=L.markerClusterGroup({showCoverageOnHover:false,spiderfyOnMaxZoom:true,maxClusterRadius:45,disableClusteringAtZoom:12});
 map.addLayer(clusters);
 
 const sidebar=document.getElementById("sidebar");
+const statsPanel=document.getElementById("stats-panel");
 const navigation=document.getElementById("navigation");
+const filters=document.getElementById("filters");
 const search=document.getElementById("search");
+const storyPanel=document.getElementById("story-panel");
+const storyContent=document.getElementById("story-content");
+let activeTab="places",activeFilter="All",records=[],countryBounds=new Map(),worldBounds=[];
 
 document.getElementById("menu-button").onclick=()=>sidebar.classList.add("open");
-document.getElementById("close-sidebar").onclick=()=>sidebar.classList.remove("open");
+document.getElementById("stats-button").onclick=()=>statsPanel.classList.add("open");
+document.getElementById("close-story").onclick=()=>storyPanel.classList.remove("open");
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).classList.remove("open"));
 
 const text=v=>String(v??"").trim();
-const escapeHtml=v=>text(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const esc=v=>text(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 const splitIds=v=>text(v).split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
+const sourceUrl=kind=>text(CONFIG[`${kind}Url`])||`data/${kind}.csv`;
+const loadCsv=kind=>new Promise((resolve,reject)=>Papa.parse(sourceUrl(kind),{download:true,header:true,skipEmptyLines:true,complete:r=>resolve(r.data),error:reject}));
 
-function sourceUrl(kind){
-  const direct=CONFIG[`${kind}Url`];
-  if(text(direct)) return direct;
-  return `data/${kind}.csv`;
-}
-
-function loadCsv(kind){
-  return new Promise((resolve,reject)=>{
-    Papa.parse(sourceUrl(kind),{
-      download:true,header:true,skipEmptyLines:true,
-      complete:r=>resolve(r.data),error:reject
-    });
-  });
+function category(type){
+  const t=text(type).toLowerCase();
+  if(t.includes("beach")||t.includes("coast")||t.includes("bay")||t.includes("lagoon")||t.includes("strait")||t.includes("estuary"))return"Beaches & water";
+  if(t.includes("river")||t.includes("lake")||t.includes("waterfall")||t.includes("oasis"))return"Rivers & lakes";
+  if(t.includes("mountain")||t.includes("dune")||t.includes("desert")||t.includes("forest")||t.includes("park"))return"Landscapes";
+  if(t.includes("museum")||t.includes("monument")||t.includes("palace")||t.includes("cathedral")||t.includes("church")||t.includes("mosque")||t.includes("basilica")||t.includes("archaeological")||t.includes("cave")||t.includes("bridge"))return"Heritage";
+  if(t.includes("city")||t.includes("town")||t.includes("village")||t.includes("neighbourhood")||t.includes("district")||t.includes("square"))return"Cities & places";
+  return"Other";
 }
 
 function featherIcon(favorite){
-  const svg=`<svg viewBox="0 0 32 48" aria-hidden="true">
-  <path d="M27.2 2.5C19.4 3.1 12.8 7.3 8.2 14.1C3.9 20.4 3.8 28.7 7.8 34.3C10.1 37.5 13.7 39.2 17.4 38.7C21.5 38.1 24.8 34.8 26.8 30.6C29.5 24.9 29.2 16.4 27.2 2.5Z" fill="#111"/>
-  <path d="M24.4 7.4C19 13.4 14.5 20.1 11.2 27.3C8.7 32.8 7.2 38.8 6.8 45.4" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".9"/>
-  <path d="M20.6 12.3L12.5 15.9M18.2 17.3L9.9 21.1M15.8 22.7L8.4 26.5M14 28L8 31.6M23.5 9.2L25.2 14.7M21.8 13.8L25.4 19.4M20 18.7L24.7 24.1M18.3 23.7L23.2 28.4" fill="none" stroke="#fff" stroke-width=".8" stroke-linecap="round" opacity=".75"/>
-  <path d="M7 45.5L10.3 36.6" stroke="#111" stroke-width="2" stroke-linecap="round"/></svg>`;
-  return L.divIcon({
-    className:`feather-marker${favorite?" favorite":""}`,
-    html:svg,
-    iconSize:favorite?[33,44]:[28,38],
-    iconAnchor:favorite?[11,42]:[9,36],
-    popupAnchor:[4,-34]
+  const svg=`<svg viewBox="0 0 18 54" aria-hidden="true">
+    <path d="M15.6 1.7C11.2 3.7 7.7 7.5 5.9 12.2C3.8 17.5 3 24 3.4 31.8C3.6 36.1 5.3 39.8 8.2 41.7C11 38.5 13.1 34.3 14.3 29.2C16.1 21.8 16.5 12.6 15.6 1.7Z" fill="#111"/>
+    <path d="M14 5C11.3 11.2 9.3 18.2 8.1 26C7.2 31.9 6.4 39.6 5.2 51.8" fill="none" stroke="#e8e2d8" stroke-width=".8" stroke-linecap="round"/>
+    <path d="M11.8 10.1L7.2 13M11 14.8L6.1 18M10.1 20L5.2 23.5M9.3 25.5L4.7 29M13.2 8.6L14.7 12.8M12.1 13.1L14.1 17.1M11.2 17.8L13.5 21.6M10.4 22.8L12.9 26.1" fill="none" stroke="#e8e2d8" stroke-width=".52" stroke-linecap="round" opacity=".85"/>
+    <path d="M5.2 52L7.4 40" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>`;
+  return L.divIcon({className:`feather-marker${favorite?" favorite":""}`,html:svg,iconSize:favorite?[17,47]:[14,39],iconAnchor:favorite?[6,44]:[5,37]});
+}
+
+function buildStory(record){
+  const p=record.place,related=record.related,photos=record.photos;
+  const hero=text(p["Hero Photo"])||text((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{})["Photo URL"]);
+  const gallery=photos.filter(x=>text(x["Photo URL"])!==hero);
+  const grouped={};related.forEach(x=>(grouped[text(x.Type)||"External"]??=[]).push(x));
+  const timeline=text(p.Timeline)||[p["First Visit"],p["Last Visit"]].map(text).filter(Boolean).join("–");
+
+  let html=`<span class="story-kicker">${esc(p.Continent||"Atlas")}</span><h2 class="story-title">${esc(p.Place)}</h2>`;
+  html+=`<p class="story-location">${esc([p.Region,p.Country].map(text).filter(Boolean).join(", "))}</p>`;
+  if(text(p.Type))html+=`<span class="story-type">${esc(p.Type)}</span>`;
+  if(timeline)html+=`<span class="story-timeline">${esc(timeline)}</span>`;
+  if(hero)html+=`<img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">`;
+  if(text(p["Short Description"]))html+=`<p class="story-text">${esc(p["Short Description"])}</p>`;
+  if(text(p["Personal Memory"]))html+=`<section class="story-section"><h3>A memory</h3><p class="story-text">${esc(p["Personal Memory"])}</p></section>`;
+
+  const labels={Essay:"Essays",Journal:"Journal",Podcast:"Podcast episodes",Video:"Videos",Gallery:"Galleries",External:"Related content"};
+  Object.entries(labels).forEach(([type,label])=>{
+    const items=grouped[type]||[];if(!items.length)return;
+    html+=`<section class="story-section"><h3>${label}</h3><ul>${items.map(i=>`<li>${text(i.URL)?`<a href="${esc(i.URL)}" target="_blank" rel="noopener">${esc(i.Title||"Untitled")}</a>`:esc(i.Title||"Untitled")}</li>`).join("")}</ul></section>`;
+  });
+
+  if(gallery.length){
+    html+=`<section class="story-section"><h3>Photos</h3><div class="gallery-track">${gallery.map(x=>`<figure><img src="${esc(x["Photo URL"])}" alt="${esc(x.Caption||p.Place)}">${text(x.Caption)?`<figcaption>${esc(x.Caption)}</figcaption>`:""}</figure>`).join("")}</div></section>`;
+  }
+
+  storyContent.innerHTML=html;
+  storyPanel.classList.add("open");
+}
+
+function showRecord(record){
+  sidebar.classList.remove("open");
+  clusters.zoomToShowLayer(record.marker,()=>{
+    map.flyTo(record.marker.getLatLng(),Math.max(map.getZoom(),10),{duration:.8});
+    setTimeout(()=>buildStory(record),350);
   });
 }
 
-function contentList(items){
-  if(!items.length)return "";
-  return `<ul>${items.map(item=>{
-    const title=escapeHtml(item.Title||"Untitled");
-    const url=text(item.URL);
-    return `<li>${url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${title}</a>`:title}</li>`;
-  }).join("")}</ul>`;
+function rebuildMap(filtered){
+  clusters.clearLayers();
+  filtered.forEach(r=>clusters.addLayer(r.marker));
 }
 
-function buildPopup(place,related,photos){
-  const hero=text(place["Hero Photo"])||text((photos.find(p=>text(p["Hero?"]).toLowerCase()==="yes")||{})["Photo URL"]);
-  const gallery=photos.filter(p=>text(p["Photo URL"])!==hero);
-  const groups={};
-  related.forEach(item=>{const type=text(item.Type)||"External";(groups[type]??=[]).push(item)});
+function visibleRecords(){
+  let result=[...records];
+  if(activeTab==="favorites")result=result.filter(r=>text(r.place.Favorite).toLowerCase()==="yes");
+  if(activeTab==="timeline")result=result.filter(r=>text(r.place.Timeline)||text(r.place["First Visit"]));
+  if(activeFilter!=="All")result=result.filter(r=>r.category===activeFilter);
+  const q=search.value.trim().toLowerCase();
+  if(q)result=result.filter(r=>r.haystack.includes(q));
+  return result;
+}
 
-  let html=`<article class="popup"><h2>${escapeHtml(place.Place)}</h2>`;
-  const location=[place.Region,place.Destination||place.Country].map(text).filter(Boolean).join(", ");
-  if(location) html+=`<p class="location">${escapeHtml(location)}</p>`;
-  if(text(place.Type)) html+=`<span class="type">${escapeHtml(place.Type)}</span>`;
-  if(hero) html+=`<img class="hero-photo" src="${escapeHtml(hero)}" alt="${escapeHtml(place.Place)}">`;
-  if(text(place["Short Description"])) html+=`<p>${escapeHtml(place["Short Description"])}</p>`;
-  if(text(place["Personal Memory"])) html+=`<h3>A memory</h3><p>${escapeHtml(place["Personal Memory"])}</p>`;
+function renderNavigation(){
+  const visible=visibleRecords();
+  rebuildMap(visible);
 
-  const labels={Essay:"Essays",Journal:"Journal",Podcast:"Podcast",Video:"Videos",Gallery:"Galleries",External:"Related content"};
-  Object.entries(labels).forEach(([type,label])=>{const list=contentList(groups[type]||[]);if(list)html+=`<h3>${label}</h3>${list}`});
-
-  if(gallery.length){
-    html+=`<h3>Photos</h3><div class="photo-grid">`;
-    html+=gallery.map(photo=>`<figure><img src="${escapeHtml(photo["Photo URL"])}" alt="${escapeHtml(photo.Caption||place.Place)}">${text(photo.Caption)?`<figcaption>${escapeHtml(photo.Caption)}</figcaption>`:""}</figure>`).join("");
-    html+=`</div>`;
+  if(search.value.trim()||activeTab!=="places"||activeFilter!=="All"){
+    navigation.innerHTML=visible.length?visible.slice(0,150).map((r,i)=>`<button class="nav-item" data-item="${i}"><strong>${esc(r.place.Place)}</strong><span>${esc([r.place.Type,r.place.Region,r.place.Country].map(text).filter(Boolean).join(" · "))}</span></button>`).join(""):"<p>No places found.</p>";
+    navigation.querySelectorAll("[data-item]").forEach(b=>b.onclick=()=>showRecord(visible[Number(b.dataset.item)]));
+    return;
   }
-  return html+"</article>";
+
+  const tree={};
+  visible.forEach(r=>{const cont=text(r.place.Continent)||"Other",country=text(r.place.Country)||"Unknown";tree[cont]??={};tree[cont][country]??=[];tree[cont][country].push(r)});
+  navigation.innerHTML=Object.keys(tree).sort().map(cont=>`<h2 class="nav-section-title">${esc(cont)}</h2>${Object.keys(tree[cont]).sort().map(country=>`<button class="nav-country" data-country="${esc(country)}"><span>${esc(country)}</span><span>${tree[cont][country].length}</span></button>`).join("")}`).join("");
+  navigation.querySelectorAll("[data-country]").forEach(b=>b.onclick=()=>{const bounds=countryBounds.get(b.dataset.country);sidebar.classList.remove("open");if(bounds?.length)map.fitBounds(bounds,{padding:[45,45],maxZoom:7})});
+}
+
+function renderFilters(){
+  const categories=["All",...new Set(records.map(r=>r.category))];
+  filters.innerHTML=categories.map(c=>`<button class="filter-chip${c===activeFilter?" active":""}" data-filter="${esc(c)}">${esc(c)}</button>`).join("");
+  filters.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;renderFilters();renderNavigation()});
+}
+
+function renderStats(){
+  const countries=new Set(records.map(r=>text(r.place.Country)).filter(Boolean));
+  const countCat=name=>records.filter(r=>r.category===name).length;
+  const unesco=records.filter(r=>text(r.place["UNESCO?"]).toLowerCase()==="yes").length;
+  const favorites=records.filter(r=>text(r.place.Favorite).toLowerCase()==="yes").length;
+  const stats=[
+    [countries.size,"Countries"],[records.length,"Places"],
+    [countCat("Beaches & water"),"Beaches & coasts"],
+    [countCat("Rivers & lakes"),"Rivers & lakes"],
+    [countCat("Landscapes"),"Landscapes"],
+    [countCat("Heritage"),"Heritage sites"],
+    [unesco,"UNESCO places"],[favorites,"Favorites"]
+  ];
+  document.getElementById("stats-grid").innerHTML=stats.map(([v,l])=>`<div class="stat-card"><span class="stat-value">${v}</span><span class="stat-label">${l}</span></div>`).join("");
 }
 
 Promise.all([loadCsv("places"),loadCsv("content"),loadCsv("photos")]).then(([places,content,photos])=>{
   const contentById=new Map(content.filter(i=>text(i["Content ID"])).map(i=>[text(i["Content ID"]),i]));
   const photosByPlace=new Map();
-
-  photos.forEach(photo=>{
-    const id=text(photo["Atlas ID"]);
-    if(!id||!text(photo["Photo URL"]))return;
-    if(!photosByPlace.has(id))photosByPlace.set(id,[]);
-    photosByPlace.get(id).push(photo);
-  });
-
-  const records=[],countryBounds=new Map(),world=[];
+  photos.forEach(p=>{const id=text(p["Atlas ID"]);if(!id||!text(p["Photo URL"]))return;if(!photosByPlace.has(id))photosByPlace.set(id,[]);photosByPlace.get(id).push(p)});
 
   places.forEach(place=>{
     if(text(place["Map Enabled"]).toLowerCase()!=="yes")return;
-    const lat=parseFloat(place.Latitude),lon=parseFloat(place.Longitude);
-    if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
-
+    const lat=parseFloat(place.Latitude),lon=parseFloat(place.Longitude);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
     const id=text(place["Atlas ID"]);
-    const related=splitIds(place["Related Content IDs"]).map(x=>contentById.get(x)).filter(Boolean).filter(i=>text(i.Status).toLowerCase()==="published");
+    const related=splitIds(place["Related Content IDs"]).map(x=>contentById.get(x)).filter(Boolean).filter(x=>text(x.Status).toLowerCase()==="published");
     const placePhotos=photosByPlace.get(id)||[];
     const favorite=text(place.Favorite).toLowerCase()==="yes";
-
-    const marker=L.marker([lat,lon],{icon:featherIcon(favorite),title:text(place.Place)})
-      .bindPopup(buildPopup(place,related,placePhotos),{maxWidth:490,maxHeight:600});
-
-    clusters.addLayer(marker);
-    world.push([lat,lon]);
-
-    const country=text(place.Country);
-    if(!countryBounds.has(country))countryBounds.set(country,[]);
-    countryBounds.get(country).push([lat,lon]);
-
-    records.push({
-      place,marker,
-      haystack:[place.Place,place.Country,place.Destination,place.Region,place.Type,place.Continent,place["Search Keywords"]].map(text).join(" ").toLowerCase()
-    });
+    const marker=L.marker([lat,lon],{icon:featherIcon(favorite),title:text(place.Place)});
+    const record={place,related,photos:placePhotos,marker,category:category(place.Type),haystack:[place.Place,place.Country,place.Region,place.Type,place.Continent,place["Search Keywords"],place.Timeline].map(text).join(" ").toLowerCase()};
+    marker.on("click",()=>buildStory(record));
+    records.push(record);worldBounds.push([lat,lon]);
+    const country=text(place.Country);if(!countryBounds.has(country))countryBounds.set(country,[]);countryBounds.get(country).push([lat,lon]);
   });
 
-  function focus(record){
-    sidebar.classList.remove("open");
-    clusters.zoomToShowLayer(record.marker,()=>{
-      map.setView(record.marker.getLatLng(),Math.max(map.getZoom(),10));
-      record.marker.openPopup();
-    });
-  }
+  document.querySelectorAll(".tab").forEach(tab=>tab.onclick=()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));tab.classList.add("active");activeTab=tab.dataset.tab;renderNavigation()});
+  search.oninput=renderNavigation;
 
-  function render(query=""){
-    const q=query.trim().toLowerCase();
-
-    if(q){
-      const matches=records.filter(r=>r.haystack.includes(q)).slice(0,80);
-      navigation.innerHTML=matches.length
-        ?matches.map((r,i)=>`<button class="search-result" data-result="${i}"><strong>${escapeHtml(r.place.Place)}</strong><span>${escapeHtml([r.place.Region,r.place.Country].map(text).filter(Boolean).join(", "))}</span></button>`).join("")
-        :"<p>No places found.</p>";
-      navigation.querySelectorAll("[data-result]").forEach(button=>button.onclick=()=>focus(matches[Number(button.dataset.result)]));
-      return;
-    }
-
-    const tree={};
-    records.forEach(record=>{
-      const continent=text(record.place.Continent)||"Other";
-      const country=text(record.place.Country)||"Unknown";
-      tree[continent]??={};
-      tree[continent][country]??=[];
-      tree[continent][country].push(record);
-    });
-
-    navigation.innerHTML=Object.keys(tree).sort().map(continent=>{
-      return `<h2 class="nav-continent">${escapeHtml(continent)}</h2>`+
-        Object.keys(tree[continent]).sort().map(country=>`<button class="nav-country" data-country="${escapeHtml(country)}">${escapeHtml(country)} (${tree[continent][country].length})</button>`).join("");
-    }).join("");
-
-    navigation.querySelectorAll("[data-country]").forEach(button=>{
-      button.onclick=()=>{
-        const bounds=countryBounds.get(button.dataset.country);
-        sidebar.classList.remove("open");
-        if(bounds?.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:7});
-      };
-    });
-  }
-
-  search.addEventListener("input",e=>render(e.target.value));
-  document.getElementById("show-all").onclick=()=>{
-    sidebar.classList.remove("open");
-    if(world.length)map.fitBounds(world,{padding:[25,25],maxZoom:3});
-  };
-
-  render();
-  if(world.length)map.fitBounds(world,{padding:[25,25],maxZoom:3});
-}).catch(error=>console.error("Atlas could not load:",error));
+  renderFilters();renderNavigation();renderStats();
+  rebuildMap(records);
+  if(worldBounds.length)map.fitBounds(worldBounds,{padding:[30,30],maxZoom:3});
+  setTimeout(()=>document.getElementById("loading-screen").classList.add("hidden"),500);
+}).catch(error=>{
+  console.error("Atlas could not load:",error);
+  document.getElementById("loading-screen").innerHTML="<p>The Atlas could not be opened. Check the browser console.</p>";
+});

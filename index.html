@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111111">
   <title>Atlas | MoreTeekay</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -10,21 +11,56 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <button id="menu-button" aria-label="Open Atlas menu">☰</button>
-  <aside id="sidebar">
-    <div class="sidebar-header">
-      <div>
-        <h1>Atlas</h1>
-        <p>An autobiography through places.</p>
-      </div>
-      <button id="close-sidebar" aria-label="Close menu">×</button>
+  <div id="loading-screen"><div class="loading-feather">◜</div><p>Opening the Atlas…</p></div>
+
+  <header id="topbar">
+    <button id="menu-button" aria-label="Open Atlas">☰</button>
+    <div class="brand">
+      <span class="brand-title">Atlas</span>
+      <span class="brand-subtitle">An autobiography through places</span>
     </div>
-    <label for="search">Find a place</label>
-    <input id="search" type="search" placeholder="City, river, beach, monument…">
-    <button id="show-all">Show the whole map</button>
+    <button id="stats-button" aria-label="Show statistics">✦</button>
+  </header>
+
+  <aside id="sidebar">
+    <div class="panel-heading">
+      <div>
+        <h1>Explore</h1>
+        <p>Places, landscapes, memories, and fragments of a life.</p>
+      </div>
+      <button class="close-panel" data-close="sidebar">×</button>
+    </div>
+
+    <input id="search" type="search" placeholder="Search a city, river, beach, monument…">
+
+    <div class="tabs">
+      <button class="tab active" data-tab="places">Places</button>
+      <button class="tab" data-tab="favorites">Favorites</button>
+      <button class="tab" data-tab="timeline">Timeline</button>
+    </div>
+
+    <div id="filters"></div>
     <div id="navigation"></div>
   </aside>
+
+  <aside id="stats-panel">
+    <div class="panel-heading">
+      <div>
+        <h1>Atlas in numbers</h1>
+        <p>The shape of a life, counted imperfectly.</p>
+      </div>
+      <button class="close-panel" data-close="stats-panel">×</button>
+    </div>
+    <div id="stats-grid"></div>
+  </aside>
+
   <main id="map"></main>
+
+  <div id="story-panel" aria-live="polite">
+    <button id="close-story" aria-label="Close story">×</button>
+    <div id="story-content"></div>
+  </div>
+
   <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
