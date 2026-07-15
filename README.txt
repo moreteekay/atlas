@@ -24,5 +24,8 @@ Google Sheets:
 Paste the published CSV URLs for Places, Content Library and Photos into config.js.
 After that, edit the sheet and refresh the map. No code replacement is required.
 
+WORLD MAP VERSION
 
-FIXED VERSION: no geographic grid. Restrained charcoal relief map with pale labels.
+At global zoom, Atlas uses world-atlas.jpg as an illustrated wall map.
+When visitors zoom in, it gradually transitions to an interactive detailed map.
+Keep world-atlas.jpg in the repository root beside index.html.

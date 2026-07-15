@@ -1,51 +1,47 @@
 const CONFIG=window.ATLAS_CONFIG||{};
 const map=L.map("map",{
-  worldCopyJump:true,
+  worldCopyJump:false,
   minZoom:2,
   maxZoom:18,
   zoomControl:false,
-  preferCanvas:true
-}).setView([22,3],2);
+  preferCanvas:true,
+  maxBounds:[[-88,-180],[88,180]],
+  maxBoundsViscosity:.9
+}).setView([12,0],2);
 
 L.control.zoom({position:"bottomright"}).addTo(map);
 
-// Clean charcoal cartographic base.
-L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
+// Illustrated wall-map layer used for the global view.
+const wallMap=L.imageOverlay(
+  "world-atlas.jpg",
+  [[-85,-180],[85,180]],
+  {
+    opacity:1,
+    interactive:false,
+    className:"wall-map-layer"
+  }
+).addTo(map);
+
+// Detailed interactive map appears as the visitor zooms in.
+const detailMap=L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
   {
     attribution:"© OpenStreetMap contributors © CARTO",
     subdomains:"abcd",
-    maxZoom:20
+    maxZoom:20,
+    opacity:0
   }
 ).addTo(map);
 
-// Very restrained relief. This remains subtle rather than becoming a second map.
-map.createPane("relief");
-map.getPane("relief").classList.add("relief-pane");
-map.getPane("relief").style.zIndex=240;
+function updateBasemap(){
+  const zoom=map.getZoom();
+  const transition=Math.max(0,Math.min(1,(zoom-2.4)/1.6));
+  wallMap.setOpacity(1-transition);
+  detailMap.setOpacity(transition);
+}
 
-L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
-  {
-    pane:"relief",
-    attribution:"Relief © Esri",
-    maxZoom:13
-  }
-).addTo(map);
-
-// Fine place labels above the relief.
-map.createPane("labels");
-map.getPane("labels").classList.add("labels-pane");
-map.getPane("labels").style.zIndex=430;
-
-L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png",
-  {
-    pane:"labels",
-    subdomains:"abcd",
-    maxZoom:20
-  }
-).addTo(map);
+map.on("zoom zoomend",updateBasemap);
+updateBasemap();
 
 const clusters=L.markerClusterGroup({showCoverageOnHover:false,spiderfyOnMaxZoom:true,maxClusterRadius:45,disableClusteringAtZoom:12});
 map.addLayer(clusters);
