@@ -39,8 +39,17 @@ document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getE
 const text=v=>String(v??"").trim();
 const esc=v=>text(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 const splitIds=v=>text(v).split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
-const sourceUrl=kind=>text(CONFIG[`${kind}Url`])||`data/${kind}.csv`;
-const loadCsv=kind=>new Promise((resolve,reject)=>Papa.parse(sourceUrl(kind),{download:true,header:true,skipEmptyLines:true,complete:r=>resolve(r.data),error:reject}));
+const apiBase=text(CONFIG.apiUrl);
+
+const loadJson=kind=>fetch(`${apiBase}?sheet=${kind}`)
+  .then(r=>{
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  })
+  .then(r=>{
+    if(!r.success) throw new Error("API error");
+    return r.data;
+  });
 
 function category(type){
   const t=text(type).toLowerCase();
@@ -152,7 +161,7 @@ function renderStats(){
   document.getElementById("stats-grid").innerHTML=stats.map(([v,l])=>`<div class="stat-card"><span class="stat-value">${v}</span><span class="stat-label">${l}</span></div>`).join("");
 }
 
-Promise.all([loadCsv("places"),loadCsv("content"),loadCsv("photos")]).then(([places,content,photos])=>{
+Promise.all([loadJson("places"),loadJson("content"),loadJson("photos")]).then(([places,content,photos])=>{
   const contentById=new Map(content.filter(i=>text(i["Content ID"])).map(i=>[text(i["Content ID"]),i]));
   const photosByPlace=new Map();
   photos.forEach(p=>{const id=text(p["Atlas ID"]);if(!id||!text(p["Photo URL"]))return;if(!photosByPlace.has(id))photosByPlace.set(id,[]);photosByPlace.get(id).push(p)});
