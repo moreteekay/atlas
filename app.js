@@ -82,7 +82,17 @@ function buildStory(record){
   html+=`<p class="story-location">${esc([p.Region,p.Country].map(text).filter(Boolean).join(", "))}</p>`;
   if(text(p.Type))html+=`<span class="story-type">${esc(p.Type)}</span>`;
   if(timeline)html+=`<span class="story-timeline">${esc(timeline)}</span>`;
-  if(hero)html+=`<img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">`;
+  if(hero){
+  html+=`
+  <figure class="story-hero-wrapper">
+    <a href="${esc(hero)}" data-pswp target="_blank">
+      <img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">
+    </a>
+    ${text((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{}).Caption)
+      ? `<figcaption>${esc((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{}).Caption)}</figcaption>`
+      : ""}
+  </figure>`;
+}
   if(text(p["Short Description"]))html+=`<p class="story-text">${esc(p["Short Description"])}</p>`;
   if(text(p["Personal Memory"]))html+=`<section class="story-section"><h3>A memory</h3><p class="story-text">${esc(p["Personal Memory"])}</p></section>`;
 
