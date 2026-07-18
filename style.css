@@ -68,8 +68,15 @@ button,input{font:inherit}
 .story-title{margin:7px 36px 4px 0;font-family:Georgia,serif;font-weight:400;font-size:30px}
 .story-location{margin:0 0 14px;color:var(--muted);font-size:13px}
 .story-type,.story-timeline{display:inline-block;margin:0 6px 11px 0;padding:4px 8px;border:1px solid var(--line);border-radius:999px;color:#655b4e;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
-.story-hero{width:100%;max-height:320px;object-fit:cover;border-radius:8px;margin:5px 0 14px}
-.story-text{color:#2e2922;line-height:1.62}
+.story-hero{
+    display:block;
+    width:100%;
+    height:auto;
+    max-height:70vh;
+    object-fit:contain;
+    border-radius:12px;
+    cursor:zoom-in;
+}.story-text{color:#2e2922;line-height:1.62}
 .story-section h3{margin:19px 0 7px;font-family:Georgia,serif;font-weight:400}
 .story-section ul{margin:0;padding-left:18px}
 .story-section a{color:#2b251e}
