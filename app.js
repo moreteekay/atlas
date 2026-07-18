@@ -109,9 +109,34 @@ function buildStory(record){
     html+=`<section class="story-section"><h3>${label}</h3><ul>${items.map(i=>`<li>${text(i.URL)?`<a href="${esc(i.URL)}" target="_blank" rel="noopener">${esc(i.Title||"Untitled")}</a>`:esc(i.Title||"Untitled")}</li>`).join("")}</ul></section>`;
   });
 
-  if(gallery.length){
-    html+=`<section class="story-section"><h3>Photos</h3><div class="gallery-track">${gallery.map(x=>`<figure><img src="${esc(x["Photo URL"])}" alt="${esc(x.Caption||p.Place)}">${text(x.Caption)?`<figcaption>${esc(x.Caption)}</figcaption>`:""}</figure>`).join("")}</div></section>`;
-  }
+  if (gallery.length) {
+  html += `
+    <section class="story-section">
+      <h3>Photos</h3>
+      <div class="gallery-track">
+        ${gallery.map(x => {
+          const width = text(x.Width) || "1600";
+          const height = text(x.Height) || "1200";
+
+          return `
+            <figure>
+              <a
+                href="${esc(x["Photo URL"])}"
+                data-pswp
+                data-pswp-width="${width}"
+                data-pswp-height="${height}">
+                <img
+                  src="${esc(x["Photo URL"])}"
+                  alt="${esc(x.Caption || p.Place)}">
+              </a>
+              ${text(x.Caption)
+                ? `<figcaption>${esc(x.Caption)}</figcaption>`
+                : ""}
+            </figure>`;
+        }).join("")}
+      </div>
+    </section>`;
+}
 
   storyContent.innerHTML=html;
   storyPanel.classList.add("open");
