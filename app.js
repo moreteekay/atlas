@@ -82,19 +82,21 @@ function buildStory(record){
   html+=`<p class="story-location">${esc([p.Region,p.Country].map(text).filter(Boolean).join(", "))}</p>`;
   if(text(p.Type))html+=`<span class="story-type">${esc(p.Type)}</span>`;
   if(timeline)html+=`<span class="story-timeline">${esc(timeline)}</span>`;
-  if(hero){
-  html+=`
+  const heroPhoto = photos.find(x => text(x["Hero?"]).toLowerCase() === "yes") || {};
+  const heroWidth = text(heroPhoto.Width) || "1600";
+  const heroHeight = text(heroPhoto.Height) || "1200";
+ if(hero){
+  html += `
   <figure class="story-hero-wrapper">
-const heroPhoto = photos.find(x => text(x["Hero?"]).toLowerCase() === "yes") || {};
-const heroWidth = text(heroPhoto.Width) || "1600";
-const heroHeight = text(heroPhoto.Height) || "1200";      <img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">
     <a
-  href="${esc(hero)}"
-  data-pswp
-  data-pswp-width="${heroWidth}"
-  data-pswp-height="${heroHeight}">
-    ${text((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{}).Caption)
-      ? `<figcaption>${esc((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{}).Caption)}</figcaption>`
+      href="${esc(hero)}"
+      data-pswp
+      data-pswp-width="${heroWidth}"
+      data-pswp-height="${heroHeight}">
+      <img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">
+    </a>
+    ${text(heroPhoto.Caption)
+      ? `<figcaption>${esc(heroPhoto.Caption)}</figcaption>`
       : ""}
   </figure>`;
 }
