@@ -12,8 +12,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="loading-screen"><div class="loading-feather">◜</div><p>Opening the Atlas…</p></div>
-
+<div id="loading-screen">
+  <div class="footsteps-loader">
+    <svg viewBox="0 0 90 40" aria-hidden="true">
+      <g class="step step1"><ellipse cx="14" cy="12" rx="5" ry="8"/></g>
+      <g class="step step2"><ellipse cx="36" cy="28" rx="5" ry="8"/></g>
+      <g class="step step3"><ellipse cx="58" cy="12" rx="5" ry="8"/></g>
+      <g class="step step4"><ellipse cx="80" cy="28" rx="5" ry="8"/></g>
+    </svg>
+  </div>
+  <p>Opening the Atlas...</p>
+</div>
   <header id="topbar">
     <button id="menu-button" aria-label="Open Atlas">☰</button>
     <div class="brand">
