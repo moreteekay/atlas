@@ -85,9 +85,14 @@ function buildStory(record){
   if(hero){
   html+=`
   <figure class="story-hero-wrapper">
-    <a href="${esc(hero)}" data-pswp target="_blank">
-      <img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">
-    </a>
+const heroPhoto = photos.find(x => text(x["Hero?"]).toLowerCase() === "yes") || {};
+const heroWidth = text(heroPhoto.Width) || "1600";
+const heroHeight = text(heroPhoto.Height) || "1200";      <img class="story-hero" src="${esc(hero)}" alt="${esc(p.Place)}">
+    <a
+  href="${esc(hero)}"
+  data-pswp
+  data-pswp-width="${heroWidth}"
+  data-pswp-height="${heroHeight}">
     ${text((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{}).Caption)
       ? `<figcaption>${esc((photos.find(x=>text(x["Hero?"]).toLowerCase()==="yes")||{}).Caption)}</figcaption>`
       : ""}
