@@ -182,3 +182,33 @@ button,input{font:inherit}
 .brand-title{
   font-size:22px;
 }
+.footsteps-loader{
+  width:90px;
+  margin:0 auto 20px;
+}
+
+.footsteps-loader svg{
+  width:100%;
+  display:block;
+}
+
+.step{
+  fill:#111;
+  opacity:.15;
+  animation:footsteps 1.6s infinite;
+}
+
+.step2{animation-delay:.2s;}
+.step3{animation-delay:.4s;}
+.step4{animation-delay:.6s;}
+
+@keyframes footsteps{
+  0%,100%{
+    opacity:.15;
+    transform:scale(.9);
+  }
+  35%{
+    opacity:1;
+    transform:scale(1);
+  }
+}
